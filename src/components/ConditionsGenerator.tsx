@@ -10,11 +10,10 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
-import useFetchAntellopes from "../api/useFetchAntellopes";
-import Alert from "../components/Alert";
 import filterByConditions from "../utils/filterByConditions";
 import AntelopesCards from "../components/AntelopesCards";
 import { Antelope } from "../utils/constants";
+import { useDataStore } from "../stores/data.store";
 
 interface OperatorsContainerProps {
   children: any;
@@ -55,18 +54,15 @@ interface ConditionsGeneratorProps {
 }
 
 export default styled(({ className }: ConditionsGeneratorProps) => {
-  const { data, loading, error } = useFetchAntellopes();
+  const { data } = useDataStore();
   const [collections, setCollections] = useState<any>(
-    JSON.parse(localStorage.getItem("collections")|| '{}')
+    JSON.parse(localStorage.getItem("collections")|| '{}') ?? {}
   );
   const [collection, setCollection] = useState<string>();
   const [selectedCollection, setSelectedCollection] = useState();
   const [helperText, setHelperText] = useState<string>();
   const [conditions, setConditions] = useState<Array<any>>([{}]);
   const [operators, setOperators] = useState<Array<any>>([]);
-  if (error || loading) {
-    return <Alert error={error} loading={loading} />;
-  }
   return (
     <div className={className}>
       <div className="collection-container">
@@ -124,7 +120,7 @@ export default styled(({ className }: ConditionsGeneratorProps) => {
       </div>
       <div className="conditions-container">
         IF:{" "}
-        {conditions.map((condition, index) => (
+        {data && data.length > 0 && conditions.map((condition, index) => (
           <OperatorsContainer
             key={index}
             value={operators[index - 1]}

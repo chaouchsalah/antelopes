@@ -1,9 +1,8 @@
 import { Autocomplete, TextField } from "@mui/material";
 import { useState } from "react";
-import useFetchAntellopes from "../api/useFetchAntellopes";
+import { useDataStore } from "../stores/data.store";
 import { Antelope } from "../utils/constants";
 import groupBy from "../utils/groupBy";
-import Alert from "./Alert";
 import BarChart from "./BarChart";
 
 interface QuestionProps {
@@ -150,11 +149,8 @@ interface AnswerProps {
 }
 
 export default () => {
-  const { data, loading, error, refetch } = useFetchAntellopes();
+  const { data } = useDataStore();
   const [selectedQuestion, setSelectedQuestion] = useState<AnswerProps>();
-  if (error || loading) {
-    return <Alert error={error} loading={loading} onTryAgain={refetch} />;
-  }
   const questions = Object.entries(QUESTION_TYPES).reduce(
     (accumulator: Array<AnswerProps>, [question, { fn, fieldsMeta, fieldsOperator, fields }]:any) => {
       let values = [];

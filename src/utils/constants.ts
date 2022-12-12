@@ -6,3 +6,7 @@ export interface Antelope {
     horns: string;
     picture: string;
 }
+
+export interface StyledProps {
+    className?: string;
+}

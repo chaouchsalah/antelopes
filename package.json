@@ -16,9 +16,13 @@
     "@emotion/styled": "^11.10.5",
     "@mui/icons-material": "^5.10.16",
     "@mui/material": "^5.10.17",
+    "@visx/axis": "^2.14.0",
+    "@visx/event": "^2.6.0",
     "@visx/group": "^2.10.0",
+    "@visx/legend": "^2.10.0",
     "@visx/scale": "^2.2.2",
     "@visx/shape": "^2.12.2",
+    "@visx/tooltip": "^2.16.0",
     "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-formatter-pretty": "^4.1.0",
@@ -28,7 +32,9 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "maplibre-gl": "^2.4.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "wouter": "^2.9.0",
+    "zustand": "^4.1.5"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",
