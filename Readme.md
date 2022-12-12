@@ -17,6 +17,12 @@ Web app that displays statistics about antelopes species.
 
 The demo is hosted on <https://antelopes.s3.eu-west-1.amazonaws.com/index.html>
 
+To switch between AB test options: 
+
+```javascript
+localStorage.setItem(‘group’,[‘A’,‘B’].find((group) => group !== localStorage.getItem(‘group’)));
+```
+
 ### Locally
 
 To run it locally, you need to first clone the project and then run these commands:
