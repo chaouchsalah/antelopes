@@ -54,5 +54,5 @@ pnpm | npm | yarn dev
 * Save the AB test actions
 * Create a notebook with the analysis of the AB test result
 * Improve the search bar to include a dynamic value that can be inputted by the user
-* Improve the search bar by using levenshtein distance, for easier questions match
+* ~~Improve the search bar by using levenshtein distance, for easier questions match~~
 * Try and connect more data, to be able to make more interesting visuals and analysis

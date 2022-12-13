@@ -1,4 +1,5 @@
 import { Autocomplete, TextField } from "@mui/material";
+import {distance as levenshtein} from "fastest-levenshtein";
 import { useState } from "react";
 import { useDataStore } from "../stores/data.store";
 import { Antelope } from "../utils/constants";
@@ -6,28 +7,32 @@ import groupBy from "../utils/groupBy";
 import BarChart from "./BarChart";
 
 interface QuestionProps {
-    data: Array<Antelope>;
-    question: string;
-    field?: string;
-    fieldOperator?: string;
-    fieldMeta?: string;
-  };
-
-
+  data: Array<Antelope>;
+  question: string;
+  field?: string;
+  fieldOperator?: string;
+  fieldMeta?: string;
+}
 
 const QUESTION_TYPES = {
   "How many": {
     fields: ["horns"],
     fieldsOperator: ["weight", "height"],
     fieldsMeta: ["horns", "continent"],
-    fn: ({ data, field, fieldOperator, fieldMeta, question }: QuestionProps) => {
+    fn: ({
+      data,
+      field,
+      fieldOperator,
+      fieldMeta,
+      question,
+    }: QuestionProps) => {
       if (fieldMeta) {
         const type = "bar";
         return {
           label: `${question} ${fieldMeta} ?`,
           type,
           answer: groupBy(data, fieldMeta),
-          field: fieldMeta
+          field: fieldMeta,
         };
       } else if (fieldOperator) {
         const type = "text";
@@ -35,9 +40,12 @@ const QUESTION_TYPES = {
           if (operator === ">=") {
             return [...Array(7).keys()].map((i) => ({
               type,
-              label: `${question} ${fieldOperator} ${operator} ${i * 10}`,
+              label: `${question} ${fieldOperator} ${operator} ${i * 10} ?`,
               answer: `There are ${data.reduce(
-                (accumulator:number, { [fieldOperator as keyof Antelope]: value }) => {
+                (
+                  accumulator: number,
+                  { [fieldOperator as keyof Antelope]: value }
+                ) => {
                   if (value >= i * 10) {
                     accumulator++;
                   }
@@ -49,7 +57,7 @@ const QUESTION_TYPES = {
           } else if (operator === "<=") {
             return [...Array(7).keys()].map((i) => ({
               type,
-              label: `${question} ${fieldOperator} ${operator} ${i * 10}`,
+              label: `${question} ${fieldOperator} ${operator} ${i * 10} ?`,
               answer: `There are ${data.reduce(
                 (accumulator, { [fieldOperator as keyof Antelope]: value }) => {
                   if (value <= i * 10) {
@@ -88,7 +96,10 @@ const QUESTION_TYPES = {
               answer: `There are ${data.reduce(
                 (
                   accumulator,
-                  { [field as keyof Antelope]: datumValue, continent: datumContinent }
+                  {
+                    [field as keyof Antelope]: datumValue,
+                    continent: datumContinent,
+                  }
                 ) =>
                   value === datumValue && continent === datumContinent
                     ? accumulator++
@@ -134,7 +145,9 @@ const QUESTION_TYPES = {
         label: `${question} ${value} ?`,
         type: "text",
         answer: `${value} is in ${
-          data.find(({ [field as keyof Antelope]: datumValue }) => value === datumValue)?.continent
+          data.find(
+            ({ [field as keyof Antelope]: datumValue }) => value === datumValue
+          )?.continent
         }`,
       }));
     },
@@ -142,27 +155,45 @@ const QUESTION_TYPES = {
 };
 
 interface AnswerProps {
-    question: string;
-    answer: any;
-    type: string;
-    field?: string;
+  label: string;
+  answer: any;
+  type: string;
+  field?: string;
+  distance?: string;
+}
+
+function getDistance(question: string, value: string): number {
+  const questionWords = question.split(" ");
+  const words = value.split(" ");
+  let distance = 0;
+  for (const word of words) {
+    distance += Math.min(
+      ...questionWords.map((questionWord) =>
+        levenshtein(questionWord.toLowerCase(), word.toLowerCase())
+      )
+    );
+  }
+  return distance;
 }
 
 export default () => {
   const { data } = useDataStore();
   const [selectedQuestion, setSelectedQuestion] = useState<AnswerProps>();
   const questions = Object.entries(QUESTION_TYPES).reduce(
-    (accumulator: Array<AnswerProps>, [question, { fn, fieldsMeta, fieldsOperator, fields }]:any) => {
+    (
+      accumulator: Array<AnswerProps>,
+      [question, { fn, fieldsMeta, fieldsOperator, fields }]: any
+    ) => {
       let values = [];
       if (fieldsMeta) {
-        values = fieldsMeta.flatMap((fieldMeta:string) =>
+        values = fieldsMeta.flatMap((fieldMeta: string) =>
           fn({ fieldMeta, question, data })
         );
       }
       if (fieldsOperator) {
         values = [
           ...values,
-          ...fieldsOperator.flatMap((fieldOperator:string) =>
+          ...fieldsOperator.flatMap((fieldOperator: string) =>
             fn({ fieldOperator, question, data })
           ),
         ];
@@ -170,35 +201,57 @@ export default () => {
       if (fields) {
         values = [
           ...values,
-          ...fields.flatMap((field:string) => fn({ field, question, data })),
+          ...fields.flatMap((field: string) => fn({ field, question, data })),
         ];
       }
       return [...accumulator, ...values];
     },
     []
   );
-  const handleAnswer = ({type,answer,field}:AnswerProps) => {
-    switch(type) {
-        case 'text':
-            return <div>{answer}</div>;
-        case 'list':
-            return <ul>{answer.map((value:string) => <li>{value}</li>)}</ul>
-            case 'bar':
-                return  <BarChart
-                width={300}
-                height={300}
-                data={answer}
-                getX={({ [field as string]:label }:any) => label}
-                getY={({ value }:{value: number;}) => value}
-              />
+
+  const filterOptions = (
+    options: any,
+    { inputValue }: { inputValue: string }
+  ) => {
+    return options
+      .map(({ label, ...option }: AnswerProps) => ({
+        ...option,
+        label,
+        distance: getDistance(label, inputValue),
+      }))
+      .filter(({ distance }: AnswerProps) => Number(distance) <= 2);
+  };
+  const handleAnswer = ({ type, answer, field }: AnswerProps) => {
+    switch (type) {
+      case "text":
+        return <div>{answer}</div>;
+      case "list":
+        return (
+          <ul>
+            {answer.map((value: string) => (
+              <li>{value}</li>
+            ))}
+          </ul>
+        );
+      case "bar":
+        return (
+          <BarChart
+            width={300}
+            height={300}
+            data={answer}
+            getX={({ [field as string]: label }: any) => label}
+            getY={({ value }: { value: number }) => value}
+          />
+        );
     }
-  }
+  };
   return (
     <div>
       <Autocomplete
         disablePortal
         options={questions}
         value={selectedQuestion}
+        filterOptions={filterOptions}
         onChange={(event: any, newValue: any) => {
           setSelectedQuestion(newValue);
         }}
